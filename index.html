@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Sets Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            width: 450px;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        h2, h3 {
+            text-align: center;
+        }
+
+        input, select {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: #f4f4f4;
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .completed li {
+            background: #d4edda;
+            text-decoration: line-through;
+        }
+
+        .danger {
+            background: #e53e3e;
+        }
+
+        .danger:hover {
+            background: #c53030;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>📁 Task Sets</h2>
+
+    <!-- Create New Set -->
+    <input id="setName" type="text" placeholder="Enter Set Name (e.g., College Work)">
+    <button id="createSet">Create New Set</button>
+
+    <!-- Select Set -->
+    <select id="setSelector"></select>
+
+    <h3>📝 Add Task</h3>
+    <input id="taskInput" type="text" placeholder="Enter task">
+    <button id="addTask">Add Task</button>
+
+    <ul id="todoList"></ul>
+
+    <h3>✅ Completed</h3>
+    <ul id="doneList" class="completed"></ul>
+
+    <button id="clearSet" class="danger">Clear This Set</button>
+</div>
+
+<script>
+    const setNameInput = document.getElementById('setName');
+    const createSetBtn = document.getElementById('createSet');
+    const setSelector = document.getElementById('setSelector');
+
+    const taskInput = document.getElementById('taskInput');
+    const addTaskBtn = document.getElementById('addTask');
+
+    const todoList = document.getElementById('todoList');
+    const doneList = document.getElementById('doneList');
+    const clearSetBtn = document.getElementById('clearSet');
+
+    // Load all sets
+    let allSets = JSON.parse(localStorage.getItem("taskSets")) || {};
+    let currentSet = null;
+
+    function saveData() {
+        localStorage.setItem("taskSets", JSON.stringify(allSets));
+    }
+
+    function refreshSetSelector() {
+        setSelector.innerHTML = "";
+        for (let set in allSets) {
+            let option = document.createElement("option");
+            option.value = set;
+            option.textContent = set;
+            setSelector.appendChild(option);
+        }
+        currentSet = setSelector.value;
+        render();
+    }
+
+    createSetBtn.addEventListener("click", () => {
+        let name = setNameInput.value.trim();
+        if (name && !allSets[name]) {
+            allSets[name] = { todo: [], completed: [] };
+            saveData();
+            setNameInput.value = "";
+            refreshSetSelector();
+        }
+    });
+
+    setSelector.addEventListener("change", () => {
+        currentSet = setSelector.value;
+        render();
+    });
+
+    addTaskBtn.addEventListener("click", () => {
+        if (taskInput.value.trim() && currentSet) {
+            allSets[currentSet].todo.push(taskInput.value);
+            saveData();
+            taskInput.value = "";
+            render();
+        }
+    });
+
+    function completeTask(index) {
+        let task = allSets[currentSet].todo[index];
+        allSets[currentSet].completed.push(task);
+        allSets[currentSet].todo.splice(index, 1);
+        saveData();
+        render();
+    }
+
+    clearSetBtn.addEventListener("click", () => {
+        if (currentSet) {
+            allSets[currentSet] = { todo: [], completed: [] };
+            saveData();
+            render();
+        }
+    });
+
+    function render() {
+        todoList.innerHTML = "";
+        doneList.innerHTML = "";
+
+        if (!currentSet) return;
+
+        allSets[currentSet].todo.forEach((task, index) => {
+            let li = document.createElement("li");
+            li.innerHTML = `
+                <span>${task}</span>
+                <button>Done</button>
+            `;
+            li.querySelector("button").addEventListener("click", () => {
+                completeTask(index);
+            });
+            todoList.appendChild(li);
+        });
+
+        allSets[currentSet].completed.forEach(task => {
+            let li = document.createElement("li");
+            li.textContent = task;
+            doneList.appendChild(li);
+        });
+    }
+
+    // Initialize
+    refreshSetSelector();
+</script>
+
+</body>
+</html>
